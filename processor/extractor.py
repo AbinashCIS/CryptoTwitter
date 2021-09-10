@@ -4,6 +4,7 @@ Email: abinash.s@cisinlabs.com
 Organisation: CIS India
 
 '''
+import os
 from time import sleep
 from twython import Twython
 import pandas as pd
@@ -46,7 +47,36 @@ class TweetExtractor():
         remaining = self.rate_limit_status["/search/tweets"]["remaining"]
         return f'<Currency={self.currency},Remaining={remaining},Limit={limit}>'
 
-    def get_tweets(self, num_queries: int, file: str) -> None:
+    def clean_data(self) -> str:
+        '''
+        Now we will cleanup the data.
+
+        We already filtered tweets in english in the call to the Twitter API.
+        We will now filter links, @Pseudo, images, videos, unhashtag #happy -> happy.
+
+        We won't transform to lower case because Vader take capital letters into consideration to emphasize sentiments.
+        '''
+        tweets_raw_file = os.path.join('data', f'{self.currency}',
+                                       'raw_tweets.csv')
+        tweets_clean_file = os.path.join('data', f'{self.currency}',
+                                         'clean_tweets.csv')
+
+        d = pd.read_csv(tweets_raw_file)
+        for i, s in enumerate(tqdm(d['Text'])):
+            text = d.loc[i, 'Text']
+            text = text.replace("#", "")
+            text = re.sub('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+',
+                          '',
+                          text,
+                          flags=re.MULTILINE)
+            text = re.sub('@\\w+ *', '', text, flags=re.MULTILINE)
+            d.loc[i, 'Text'] = text
+        f = open(tweets_clean_file, 'a+', encoding='utf-8')
+        d.to_csv(f, header=True, encoding='utf-8', index=False)
+
+        return tweets_clean_file
+
+    def get_tweets(self, num_queries: int) -> str:
         '''
         The following fields are retrieved from the response:
 
@@ -70,12 +100,17 @@ class TweetExtractor():
         
         '''
         NUMBER_OF_QUERIES = num_queries
-        tweets_raw_file = file
+        path = os.path.join("data", self.currency)
+        if not os.path.exists(path):
+            os.mkdir(path)
+        tweets_raw_file = os.path.join(path, "raw_tweets.csv")
+
         data = {"statuses": []}
         next_id = ""
         query = f'#{self.currency} OR #{self.currency_symbol}'
+
         with open(tweets_raw_file, "a+", encoding='utf-8') as f:
-            if not next_id:
+            if os.stat(tweets_raw_file).st_size == 0:
                 f.write(
                     "ID,Text,UserName,UserFollowerCount,RetweetCount,Likes,CreatedAt\n"
                 )
@@ -112,28 +147,4 @@ class TweetExtractor():
             if last_size + 1 == len(data["statuses"]):
                 print('No more new tweets, stopping...')
             data["statuses"] = []
-
-    def clean_data(self, raw_file: str, clean_file: str) -> None:
-        '''
-        Now we will cleanup the data.
-
-        We already filtered tweets in english in the call to the Twitter API.
-        We will now filter links, @Pseudo, images, videos, unhashtag #happy -> happy.
-
-        We won't transform to lower case because Vader take capital letters into consideration to emphasize sentiments.
-        '''
-        tweets_raw_file = raw_file
-        tweets_clean_file = clean_file
-
-        d = pd.read_csv(tweets_raw_file)
-        for i, s in enumerate(tqdm(d['Text'])):
-            text = d.loc[i, 'Text']
-            text = text.replace("#", "")
-            text = re.sub('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+',
-                          '',
-                          text,
-                          flags=re.MULTILINE)
-            text = re.sub('@\\w+ *', '', text, flags=re.MULTILINE)
-            d.loc[i, 'Text'] = text
-        f = open(tweets_clean_file, 'a+', encoding='utf-8')
-        d.to_csv(f, header=True, encoding='utf-8', index=False)
+        return tweets_raw_file

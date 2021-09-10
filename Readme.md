@@ -1,6 +1,6 @@
 # Sentiment Analysis Tool for Twitter :
 
-## ![Header](head.jpg)
+## ![Header](data/images/head.jpg)
 
 ---
 
@@ -12,12 +12,12 @@
 4. Compute the final sentiment's score with the number of followers and likes
 5. Plot it on the realtime graph
 
-## ![Image](pipeline.png)
+## ![Image](data/images/pipeline.png)
 
 ---
 
 - #### Gather Data from Twitter
-  ![Image](twitter.png)
+  ![Image](data/images/twitter.png)
   - Use hastag, target celebrity handles
   - For each tweets we extracted the following informations:
     - ID
@@ -32,7 +32,7 @@
 
 - #### Preprocessing
 
-  ![Image](clean.png)
+  ![Image](data/images/clean.png)
 
   - For the preprocessing, we remove all of the useless data from the tweets, such as HTTP links, @pseudo tags, images, videos and hashtags (#happy->happy). We finally stored them in a CSV file.
   - Once the cleaned files are obtained, we process the sentiment analysis on each textual content of the tweet to obtain a sentiment score named compound.
@@ -49,7 +49,7 @@
 
 ### Techniques and algorithms
 
-![Image](algo.png)
+![Image](data/images/algo.png)
 
 - ##### Sentiment analysis - vaderSentiment
   - **VADER** (Valence Aware Dictionary and sEntiment Reasoner) is a lexicon and rule-based sentiment analysis tool that is specifically attuned to sentiments expressed in social media. It is fully open-sourced under the [MIT License]
